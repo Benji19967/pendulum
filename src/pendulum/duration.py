@@ -1,18 +1,16 @@
 from __future__ import annotations
 
 from datetime import timedelta
-from typing import TYPE_CHECKING
-from typing import cast
-from typing import overload
+from typing import TYPE_CHECKING, cast, overload
 
 import pendulum
-
-from pendulum.constants import SECONDS_PER_DAY
-from pendulum.constants import SECONDS_PER_HOUR
-from pendulum.constants import SECONDS_PER_MINUTE
-from pendulum.constants import US_PER_SECOND
+from pendulum.constants import (
+    SECONDS_PER_DAY,
+    SECONDS_PER_HOUR,
+    SECONDS_PER_MINUTE,
+    US_PER_SECOND,
+)
 from pendulum.utils._compat import PYPY
-
 
 if TYPE_CHECKING:
     from typing_extensions import Self
@@ -82,6 +80,8 @@ class Duration(timedelta):
     ) -> Self:
         if not isinstance(years, int) or not isinstance(months, int):
             raise ValueError("Float year and months are not supported")
+        print(f"__new__ years: {years}")
+        print(f"__new__ microseconds: {microseconds}")
 
         self = timedelta.__new__(
             cls,
@@ -95,7 +95,9 @@ class Duration(timedelta):
         )
 
         # Intuitive normalization
+        print(f"total_seconds: {self.total_seconds()}")
         total = self.total_seconds() - (years * 365 + months * 30) * SECONDS_PER_DAY
+        print(f"total: {total}")
         self._total = total
 
         m = 1
@@ -354,6 +356,18 @@ class Duration(timedelta):
         )
 
     def _to_microseconds(self) -> int:
+        print(f"_to_microseconds self._days: {self._days}")
+        print(f"_to_microseconds self._seconds: {self._seconds}")
+        print(f"_to_microseconds self._microseconds: {self._microseconds}")
+
+        # return self.total_seconds() * 1000000
+
+        # Using `total_days` instead of `days`
+        # return (
+        #     self.total_days() * (24 * 3600) + self._seconds
+        # ) * 1000000 + self._microseconds
+
+        # ORIGINAL
         return (self._days * (24 * 3600) + self._seconds) * 1000000 + self._microseconds
 
     def __mul__(self, other: int | float) -> Self:
@@ -367,8 +381,17 @@ class Duration(timedelta):
         if isinstance(other, float):
             usec = self._to_microseconds()
             a, b = other.as_integer_ratio()
+            print(usec, a, b)
 
-            return self.__class__(0, 0, _divide_and_round(usec * a, b))
+            dar = _divide_and_round(usec * a, b)
+            print(f"dar: {dar}")
+            cls = self.__class__(
+                0,
+                0,
+                microseconds=dar,
+            )
+            print(cls)
+            return cls
 
         return NotImplemented
 
@@ -389,7 +412,8 @@ class Duration(timedelta):
         usec = self._to_microseconds()
         if isinstance(other, timedelta):
             return cast(
-                int, usec // other._to_microseconds()  # type: ignore[attr-defined]
+                int,
+                usec // other._to_microseconds(),  # type: ignore[attr-defined]
             )
 
         if isinstance(other, int):
@@ -416,7 +440,8 @@ class Duration(timedelta):
         usec = self._to_microseconds()
         if isinstance(other, timedelta):
             return cast(
-                float, usec / other._to_microseconds()  # type: ignore[attr-defined]
+                float,
+                usec / other._to_microseconds(),  # type: ignore[attr-defined]
             )
 
         if isinstance(other, int):
