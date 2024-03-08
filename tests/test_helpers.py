@@ -6,12 +6,8 @@ import pytest
 import pytz
 
 import pendulum
-
 from pendulum import timezone
-from pendulum.helpers import PreciseDiff
-from pendulum.helpers import days_in_year
-from pendulum.helpers import precise_diff
-from pendulum.helpers import week_day
+from pendulum.helpers import PreciseDiff, days_in_year, precise_diff, week_day
 
 
 def assert_diff(
@@ -75,6 +71,24 @@ def test_precise_diff() -> None:
     assert_diff(
         diff, months=11, days=30, hours=23, minutes=59, seconds=59, microseconds=999800
     )
+
+    dt1 = datetime(2024, 1, 2, 0, 0, 0, 0)
+    dt2 = datetime(2024, 2, 1, 0, 0, 0, 0)
+
+    diff = precise_diff(dt1, dt2)
+    assert_diff(diff, months=0, days=30, hours=0, minutes=0, seconds=0, microseconds=0)
+
+    dt1 = datetime(2024, 1, 3, 0, 0, 0, 0)
+    dt2 = datetime(2024, 2, 1, 0, 0, 0, 0)
+
+    diff = precise_diff(dt1, dt2)
+    assert_diff(diff, months=0, days=29, hours=0, minutes=0, seconds=0, microseconds=0)
+
+    dt1 = datetime(2024, 1, 4, 0, 0, 0, 0)
+    dt2 = datetime(2024, 2, 1, 0, 0, 0, 0)
+
+    diff = precise_diff(dt1, dt2)
+    assert_diff(diff, months=0, days=28, hours=0, minutes=0, seconds=0, microseconds=0)
 
     # DST
     tz = timezone("America/Toronto")
